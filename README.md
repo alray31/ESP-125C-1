@@ -37,9 +37,9 @@ RF433 Transmitter:
 ---
 ## Wiring diagram
 
-<img width="584" height="1247" alt="image" src="https://github.com/user-attachments/assets/16f647a5-1e65-42b1-af6d-efb7d2f44066" />
+<img width="584" height="547" alt="image" src="https://github.com/user-attachments/assets/619c494c-9e98-438e-abf1-fa1421785298" />
 
-ENG contact is not used
+note: EN contact from RF transmitter is not used
 
 ---
 
