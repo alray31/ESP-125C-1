@@ -42,7 +42,6 @@ RF433 Transmitter:
 note: EN contact from RF transmitter is not used
 
 ---
-
 ## Proof of Concept
 
 This project has been tested and successfully transmits the captured RF signals from an ACM-125C-1 remote. The ESP32, running ESPHome, can toggle the pool lights (skimmer or return jet) from Home Assistant.  
@@ -62,16 +61,63 @@ Steps verified in proof of concept:
 The ACM-125C-1 remote transmits RF signals as a pulse train. The structure is as follows:
 
 1. **Leading Pulse** – An initial pulse signals the start of the transmission (preamble). The pulse length is consistent for all commands except the On/Off commands.  
-2. **24-bit Data Transmission** – The actual command is encoded as a 24-bit sequence of high and low pulses.  
-3. **Repeated Transmission** – The 24-bit signal is repeated 10 times for all commands, except the pair command, which is repeated 110 times.  
+2. **24-bit Data Transmission** – The actual command is encoded as a 25-bit sequence of high and low pulses.  
+3. **Repeated Transmission** – The 25-bit signal is repeated 10 times for all commands, except the pair command, which is repeated 110 times.  
 
 Typical pulse train:  
 <img width="874" height="149" alt="image" src="https://github.com/user-attachments/assets/ace97d7a-4200-41c9-8f98-026032245a89" />
 
-Typical 24-bit sequence:  
+Typical 25-bit sequence:  
 <img width="958" height="155" alt="image" src="https://github.com/user-attachments/assets/4625414a-4c45-4003-9139-8389a9c9b14c" />
 
-This structure ensures the receiver correctly interprets the command, even in a noisy RF environment. The ESP32 replicates this pattern for accurate control of the pool light(s).
+Pulse analysis and binary translation:
+1. **Base pulse lenght** – The base pulse lenght (T) is about 260µs
+2. **Protocol** – The protocol uses a 4T sampling interval (1040µs) to determines if the bit is low (0) or high (1). 1T high (a high pulse of 1T 260µs) followed by 3T low (a pause of of 3T (3T = 3 x 260µs = 780µs) means 0. 3T high (a high pulse of 780µs) followed by 1T low (a pause of 260µs) means 1:
+
+<img width="599" height="408" alt="image" src="https://github.com/user-attachments/assets/f2227939-a3ed-4188-a02f-d3ab57bb40ea" />
+
+This pattern of 3T high : 1T low  /  1T high : 3T low matches RC-Switch protocol #1 of the arduino librabry.
+
+
+Translating 25-bit analog pulse train to binary:
+
+
+<img width="954" height="181" alt="image" src="https://github.com/user-attachments/assets/40d0c449-b087-47fb-8afe-ee5338555fd2" />
+
+
+Decoding the 25-bit sequence:
+1. **Remote unique address** – The first 16 bits are to encode the remote unique address and stays the same for all transmissions
+2. **Data block** – Bits 17 to 24 are to encode the command sent by the remote. The first bit of the data block (bit 17) is high for effect speed/light intensity commands and low for any other commmands (ON/OFF/PAIR/EFFECT/WHITE/COLOR). The second bit of the data block (bit 18), will by high when sending a color wheel command, remains low for all other commmands.
+3. **End bit/Stop bit** – Bit 25 is always high to confirm end of data block.  
+<img width="1087" height="465" alt="image" src="https://github.com/user-attachments/assets/4e80ecd9-931f-47e7-bf7d-e4755f59b1a4" />
+
+
+Binary Codes Table:
+| ADDRESS          | DATA       | END | DESCRIPTION                               |
+|------------------|------------|-----|-------------------------------------------|
+| 1111110100100110 | 0 0000111  | 1   | ON                                        |
+| 1111110100100110 | 0 0111000  | 1   | OFF                                       |
+| 1111110100100110 | 0 0110001  | 1   | PAIR                                      |
+| 1111110100100110 | 0 0001110  | 1   | GRADUAL EFFECT                            |
+| 1111110100100110 | 0 0010101  | 1   | WAVE EFFECT                               |
+| 1111110100100110 | 0 0011100  | 1   | JUMPING EFFECT                            |
+| 1111110100100110 | 0 0100011  | 1   | FADING EFFECT                             |
+| 1111110100100110 | 0 0101010  | 1   | WAVE + JUMPING EFFECT                     |
+| 1111110100100110 | 0 0001001  | 1   | STEADY WHITE MODE                         |
+| 1111110100100110 | 0 0110110  | 1   | COLOR WHEEL MODE                          |
+| 1111110100100110 | 0 1000000  | 1   | COLOR WHEEL 000 DEGREE                    |
+| 1111110100100110 | 0 1******  | 1   | 62 OTHER COLOR WHEEL CODES IN BETWEEN     |
+| 1111110100100110 | 0 1111111  | 1   | COLOR WHEEL 364 DEGREE                    |
+| 1111110100100110 | 1 1000111  | 1   | EFFECT SPEED / LIGHT INTENSITY 1          |
+| 1111110100100110 | 1 1001111  | 1   | EFFECT SPEED / LIGHT INTENSITY 2          |
+| 1111110100100110 | 1 1010111  | 1   | EFFECT SPEED / LIGHT INTENSITY 3          |
+| 1111110100100110 | 1 1011111  | 1   | EFFECT SPEED / LIGHT INTENSITY 4          |
+| 1111110100100110 | 1 1100111  | 1   | EFFECT SPEED / LIGHT INTENSITY 5          |
+| 1111110100100110 | 1 1101111  | 1   | EFFECT SPEED / LIGHT INTENSITY 6          |
+| 1111110100100110 | 1 1110111  | 1   | EFFECT SPEED / LIGHT INTENSITY 7          |
+| 1111110100100110 | 1 1111111  | 1   | EFFECT SPEED / LIGHT INTENSITY 8          |
+
+
 
 ---
 
@@ -111,4 +157,4 @@ The pool light acts as a receiver only. Therefore, no feedback is sent from the 
 
 ## License
 
-MIT License
+
