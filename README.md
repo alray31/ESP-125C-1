@@ -60,12 +60,16 @@ Steps verified in proof of concept:
 
 The ACM-125C-1 remote transmits RF signals as a pulse train. The structure is as follows:
 
-1. **Leading Pulse** – An initial pulse signals the start of the transmission (preamble). The pulse length is consistent for all commands except the On/Off commands.  
-2. **24-bit Data Transmission** – The actual command is encoded as a 25-bit sequence of high and low pulses.  
-3. **Repeated Transmission** – The 25-bit signal is repeated 10 times for all commands, except the pair command, which is repeated 110 times.  
+1. **Leading Pulse / Preamble ** – An initial pulse signals the start of the transmission (preamble). The preabmle (pulse length + pause lenght) is consistent for all commands except the On/Off commands:
+ON: pulse of 23100µs, pause of 7500µs
+OFF: pulse of 11610µs, pause of 30440µs
+All other commands: pulse of 263, pause off 7520 µs
+3. **25-bit Data Transmission** – The actual command is encoded as a 25-bit sequence of high and low pulses.  
+4. **Repeated Transmission** – The 25-bit signal is repeated 10 times for all commands, with pause of 7250µs between each repeatition, except the pair command, which is repeated 110 times.  
 
 Typical pulse train:  
 <img width="874" height="149" alt="image" src="https://github.com/user-attachments/assets/ace97d7a-4200-41c9-8f98-026032245a89" />
+<img width="1309" height="330" alt="image" src="https://github.com/user-attachments/assets/e8e0f3f1-22c8-46a7-9dca-55a90c6831e2" />
 
 Typical 25-bit sequence:  
 <img width="958" height="155" alt="image" src="https://github.com/user-attachments/assets/4625414a-4c45-4003-9139-8389a9c9b14c" />
